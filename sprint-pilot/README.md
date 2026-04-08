@@ -1,6 +1,6 @@
 # /sprint-pilot — AI-Powered Sprint Co-Pilot
 
-Your AI-powered sprint management skill for Claude Code. Fetches Jira data, deep-analyzes every ticket with ULTRATHINK AI subagents (including Confluence research), tracks velocity across sprints, detects scope creep, and produces copy-paste sprint reviews.
+Your AI-powered sprint management skill for Claude Code. Fetches Jira data, deep-analyzes every ticket with Jarvis AI subagents (including Confluence research), tracks velocity across sprints, detects scope creep, and produces copy-paste sprint reviews.
 
 ## Commands
 
@@ -21,9 +21,9 @@ Flags combine: `/sprint-pilot --land --fleet --earnings`
 ## What it does
 
 - Fetches your open sprint tickets from Jira
-- Spawns ULTRATHINK AI subagents to deep-analyze each ticket — reads description, comments, PRs, blockers, and searches Confluence for relevant docs
-- Searches multiple local repos to identify exactly which files need changes, with line-level precision and cross-repo awareness
-- Posts detailed developer briefs as comments on each Jira ticket — developers see guidance the moment they open their ticket (disable with `--no-comment`)
+- Spawns Jarvis subagents (Sonnet, ~5x cheaper than Opus) to deep-analyze each ticket — reads description, comments, PRs, blockers, and searches Confluence for relevant docs
+- Searches multiple local repos in priority order to identify exactly which files need changes, with line-level precision — stops searching once files are found to save tokens
+- Posts detailed developer briefs as **restricted Jira comments** (Developers role only, via `curl` + `JIRA_PAT`) — developers see guidance the moment they open their ticket
 - Generates developer-ready briefs: what to do, where to start, which files to modify, and smart clarifying questions for vague tickets
 - Flags carry-overs from previous sprint (Y/N)
 - Detects scope additions (tickets added mid-sprint)
@@ -43,18 +43,23 @@ Flags combine: `/sprint-pilot --land --fleet --earnings`
    DASH_PNG_PATH  = <where you want the dashboard PNG>
    JIRA_COMMENT   = true                                  (posts developer briefs to Jira tickets)
    ```
-4. Configure your repos (optional — enables codebase-aware analysis):
+4. Configure your repos in priority order (optional — enables codebase-aware analysis):
    ```
    REPOS:
-     - path: ~/repos/my-dags           label: "DAGs and pipeline code"
-     - path: ~/repos/my-datamart       label: "Datamart SQL models"
-     - path: ~/repos/my-framework      label: "Shared data processing framework"
+     1. path: ~/repos/my-datamart       label: "Datamart SQL models (PRIMARY — searched first)"
+     2. path: ~/repos/my-dags           label: "DAGs and pipeline code"
+     3. path: ~/repos/my-framework      label: "Shared data processing framework"
    ```
-4. Install dependencies:
+5. Set up a Jira PAT for restricted comments (optional but recommended):
+   ```bash
+   # Create token at: https://<your-jira>/secure/ViewProfile.jspa → Personal Access Tokens
+   echo 'export JIRA_PAT="your-token-here"' >> ~/.zshrc && source ~/.zshrc
+   ```
+6. Install dependencies:
    ```bash
    pip install openpyxl matplotlib
    ```
-5. Run `/sprint-pilot --showroom` to verify
+7. Run `/sprint-pilot --showroom` to verify
 
 ## Sample Excel
 

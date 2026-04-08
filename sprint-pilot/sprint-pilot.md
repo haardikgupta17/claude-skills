@@ -1,6 +1,6 @@
 # Skill: /sprint-pilot
 
-Your AI-powered sprint co-pilot. Fetches Jira data, deep-analyzes every ticket with ULTRATHINK subagents, tracks velocity, detects scope creep, and produces copy-paste sprint reviews.
+Your AI-powered sprint co-pilot. Fetches Jira data, deep-analyzes every ticket with Jarvis subagents, tracks velocity, detects scope creep, and produces copy-paste sprint reviews.
 
 ## Configuration
 
@@ -72,7 +72,7 @@ Print this formatted overview — no Jira calls, no script execution:
 
 What happens under the hood:
 - Fetches your open sprint tickets from Jira
-- Spawns ULTRATHINK AI subagents to deep-analyze each ticket
+- Spawns Jarvis AI subagents to deep-analyze each ticket
 - Searches your local codebase(s) to identify exactly which files need changes (if REPOS configured)
 - Generates developer-ready briefs: what to do, where to start, which files to modify
 - Posts detailed developer briefs as Jira comments (skip with --no-comment)
@@ -99,7 +99,7 @@ Fields: `summary`, `priority`, `status`, `customfield_11501`, `description`, `co
 
 Extract sprint name from `customfield_11501` on the first ticket (parse `name=...`).
 
-### Step 2: ULTRATHINK multi-agent ticket analysis
+### Step 2: Jarvis multi-agent ticket analysis
 
 For EACH ticket, spawn a **subagent** (using the Agent tool with `model: "sonnet"`) to deeply analyze the ticket and produce a developer-ready brief. This parallelizes the analysis across all tickets while keeping token costs low — Sonnet is ~5x cheaper than Opus and handles codebase search + analysis well.
 
@@ -112,7 +112,7 @@ Each subagent must return THREE things in a structured format:
 ```
 You are a Staff-level Data Engineer / Senior Developer reviewing sprint tickets. Your job is to produce a brief so clear and specific that a developer can read it and START CODING IMMEDIATELY — zero ambiguity, zero guesswork.
 
-ULTRATHINK deeply about this Jira ticket. Cross-reference it with the actual codebase, Confluence docs, and comments. Your output should read like a senior engineer sitting next to the developer saying "here's exactly what you need to do, here's where, and here's what to watch out for."
+Jarvis deeply about this Jira ticket. Cross-reference it with the actual codebase, Confluence docs, and comments. Your output should read like a senior engineer sitting next to the developer saying "here's exactly what you need to do, here's where, and here's what to watch out for."
 
 Ticket: {key}
 Summary: {summary}
@@ -468,7 +468,7 @@ Also works with multiple: `/sprint-pilot --summon PROJ-12345 PROJ-12346`
 
 1. **Fetch ticket(s)** via `mcp__jira__FetchJiraIssue` for each ticket key provided
 2. **Extract sprint name** from `customfield_11501` on the ticket (parse `name=...` where `state=ACTIVE`)
-3. **Spawn ULTRATHINK subagent** to analyze the ticket (same prompt as liftoff — searches codebase, searches Confluence, returns FILES_TO_MODIFY + ACTION_BRIEF + DEV_CONTEXT)
+3. **Spawn Jarvis subagent** to analyze the ticket (same prompt as liftoff — searches codebase, searches Confluence, returns FILES_TO_MODIFY + ACTION_BRIEF + DEV_CONTEXT)
 4. **Post Jira comment** with the developer brief (same format as liftoff Step 4, unless `--no-comment`)
 5. **Run script:**
 ```bash
