@@ -1,125 +1,92 @@
-# sprint-pilot
+# /sprint-pilot — AI-Powered Sprint Co-Pilot
 
-AI-powered sprint co-pilot for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Fetches your Jira sprint tickets, deep-analyzes each one with parallel AI subagents, tracks velocity across sprints, detects scope creep, and produces copy-paste sprint reviews — all from your terminal.
+Your AI-powered sprint management skill for Claude Code. Fetches Jira data, deep-analyzes every ticket with ULTRATHINK AI subagents (including Confluence research), tracks velocity across sprints, detects scope creep, and produces copy-paste sprint reviews.
+
+## Commands
+
+```
+/sprint-pilot --liftoff          Launch sprint — AI-analyzed brief for every ticket
+/sprint-pilot --land             Sprint closeout — final statuses + velocity update
+/sprint-pilot --summon PROJ-123    Summon a ticket mid-sprint (auto-flagged as scope addition)
+/sprint-pilot --earnings         Copy-paste sprint review message for Teams/Slack
+/sprint-pilot --dashboard        Regenerate velocity charts
+/sprint-pilot --fleet            Team-wide view (all assignees)
+/sprint-pilot --factory OTHER-PROJ     Switch to a different Jira project
+/sprint-pilot --no-comment       Skip posting developer briefs to Jira
+/sprint-pilot --showroom         Show all commands
+```
+
+Flags combine: `/sprint-pilot --land --fleet --earnings`
 
 ## What it does
 
 - Fetches your open sprint tickets from Jira
-- Spawns parallel AI subagents to deep-analyze each ticket (searches Confluence for docs too)
-- Generates developer-ready action briefs: what to do, where to start, who to talk to
-- Flags carry-overs from previous sprints and detects scope additions
-- Produces a color-coded Excel tracker with statuses, priorities, and AI-generated briefs
+- Spawns ULTRATHINK AI subagents to deep-analyze each ticket — reads description, comments, PRs, blockers, and searches Confluence for relevant docs
+- Searches multiple local repos to identify exactly which files need changes, with line-level precision and cross-repo awareness
+- Posts detailed developer briefs as comments on each Jira ticket — developers see guidance the moment they open their ticket (disable with `--no-comment`)
+- Generates developer-ready briefs: what to do, where to start, which files to modify, and smart clarifying questions for vague tickets
+- Flags carry-overs from previous sprint (Y/N)
+- Detects scope additions (tickets added mid-sprint)
+- Updates Excel tracker with color-coded statuses, priorities, and action briefs
 - Tracks velocity across sprints with resolution rate, scope creep, and carry-over trends
-- Generates a 4-panel matplotlib velocity dashboard
-- Creates copy-paste sprint reviews for Teams/Slack
+- Auto-generates a 4-panel velocity dashboard chart embedded in Excel
 
-## Prerequisites
+## Setup (2 minutes)
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with Jira MCP server configured
-- Python 3.8+
-- Jira project with sprint boards
+1. Copy `sprint-pilot.md` to `~/.claude/commands/`
+2. Copy `update_sprint_tasks.py` to your working directory
+3. Edit the paths at the top of `sprint-pilot.md`:
+   ```
+   JIRA_PROJECT   = <your Jira project key>
+   SCRIPT_PATH    = <path to update_sprint_tasks.py>
+   EXCEL_PATH     = <where you want Sprint_Tasks.xlsx>
+   DASH_PNG_PATH  = <where you want the dashboard PNG>
+   JIRA_COMMENT   = true                                  (posts developer briefs to Jira tickets)
+   ```
+4. Configure your repos (optional — enables codebase-aware analysis):
+   ```
+   REPOS:
+     - path: ~/repos/my-dags           label: "DAGs and pipeline code"
+     - path: ~/repos/my-datamart       label: "Datamart SQL models"
+     - path: ~/repos/my-framework      label: "Shared data processing framework"
+   ```
+4. Install dependencies:
+   ```bash
+   pip install openpyxl matplotlib
+   ```
+5. Run `/sprint-pilot --showroom` to verify
 
-## Setup
+## Sample Excel
 
-```bash
-# 1. Install Python dependencies
-pip install -r requirements.txt
+`Sprint_Sample.xlsx` is included — open it to see the format with 3 sprints of sample data, velocity tracking, and the embedded dashboard chart. No real data.
 
-# 2. Copy the skill file to your Claude Code commands directory
-cp sprint-pilot.md ~/.claude/commands/sprint-pilot.md
+## Files
 
-# 3. Copy the Python script to your preferred location
-cp update_sprint_tasks.py ~/Documents/sprint-pilot/update_sprint_tasks.py
-```
+| File | Purpose |
+|------|---------|
+| `sprint-pilot.md` | Claude Code skill file (copy to `~/.claude/commands/`) |
+| `update_sprint_tasks.py` | Sprint tracker engine (Excel generation, velocity tracking, dashboard) |
+| `Sprint_Sample.xlsx` | Sample Excel with 3 fake sprints for demo |
+| `Sprint_Sample_Dashboard.png` | Sample velocity dashboard chart |
 
-## Configuration
+## Excel Structure (9 columns per sprint)
 
-Edit the top of `~/.claude/commands/sprint-pilot.md` and update:
+| Column | Header | Content |
+|--------|--------|---------|
+| A | S.No | Sequential number |
+| B | Ticket Number | Jira key |
+| C | Summary | Ticket title |
+| D | Priority | Color-coded (P1 red, P2 orange, P3 yellow, P4 green, P5 grey) |
+| E | Status | Color-coded (green=done, red=blocked, blue=dev) |
+| F | Action Brief | AI-generated developer brief (light blue background) |
+| G | Carry-Over | Y/N flag |
+| H | Risk / Dependency Flag | Your column — empty unless you fill it |
+| I | Notes | Your column — never overwritten |
 
-```
-JIRA_PROJECT   = YOUR_PROJECT_KEY        # e.g. MYTEAM, ENG, PLATFORM
-JIRA_BASE_URL  = https://your-jira.atlassian.net/browse
-SCRIPT_PATH    = /path/to/update_sprint_tasks.py
-EXCEL_PATH     = /path/to/Sprint_Tasks.xlsx
-DASH_PNG_PATH  = /path/to/Sprint_Velocity_Dashboard.png
-```
+Special sheets: **Dashboard** (embedded chart), **Velocity** (sprint metrics)
 
-## Commands
+## Requirements
 
-| Command | Description |
-|---------|-------------|
-| `/sprint-pilot --liftoff` | Launch sprint — AI-powered ticket analysis + action briefs |
-| `/sprint-pilot --land` | Sprint closeout + velocity update |
-| `/sprint-pilot --earnings` | Copy-paste sprint review for Teams/Slack |
-| `/sprint-pilot --dashboard` | Regenerate velocity charts |
-| `/sprint-pilot --fleet` | Team-wide view (all assignees) |
-| `/sprint-pilot --summon PROJ-123` | Add a ticket mid-sprint (flagged as scope addition) |
-| `/sprint-pilot --factory PROJ` | Switch Jira project for this run |
-| `/sprint-pilot --showroom` | Show all commands |
-
-Flags combine: `/sprint-pilot --land --fleet --earnings`
-
-## How it works
-
-### Liftoff (`--liftoff`)
-
-1. Queries Jira for your open sprint tickets
-2. Spawns a parallel AI subagent for each ticket that:
-   - Analyzes the technical work required
-   - Checks for open PRs, blockers, and dependencies
-   - Searches Confluence for relevant documentation
-   - Generates a developer-ready action brief
-3. Creates a color-coded Excel sheet with all tickets and AI briefs
-4. Records sprint baseline in the Velocity sheet
-5. Prints a formatted briefing in your terminal
-
-### Landing (`--land`)
-
-1. Fetches final ticket statuses
-2. Updates the Excel with color-coded results
-3. Detects scope additions (tickets added mid-sprint)
-4. Calculates velocity metrics (resolution rate, scope creep, carry-overs)
-5. Auto-regenerates the velocity dashboard
-
-### Earnings (`--earnings`)
-
-Generates a markdown sprint review ready to paste into Teams, Slack, or email — with ticket links, resolution stats, and velocity metrics.
-
-## Excel Structure
-
-Each sprint gets its own sheet with 9 columns:
-
-| Column | Content |
-|--------|---------|
-| S.No | Sequential number |
-| Ticket Number | Jira key |
-| Summary | Ticket title |
-| Priority | Color-coded (P1 red to P5 grey) |
-| Status | Color-coded (green=done, red=blocked, blue=in progress) |
-| Action Brief | AI-generated next steps |
-| Carry-Over | Y/N flag |
-| Risk / Dependency Flag | Your notes |
-| Notes | Your notes |
-
-Plus two special sheets:
-- **Velocity** — sprint-over-sprint metrics with conditional formatting
-- **Dashboard** — embedded 4-panel velocity chart
-
-## Customization
-
-### Adding custom statuses
-
-Edit the `STATUS_COLORS` dict in `update_sprint_tasks.py`:
-
-```python
-STATUS_COLORS = {
-    "Blocked":              "FF0000",
-    "In Progress":          "4472C4",
-    "Done":                 "00B050",
-    "Your Custom Status":   "9B59B6",  # add yours here
-}
-```
-
-### Confluence integration
-
-The AI subagents automatically search Confluence for relevant docs during ticket analysis. This requires a Confluence MCP server configured in your Claude Code setup. If you don't use Confluence, the skill works fine without it — just remove Step 2 from the subagent prompt in the skill file.
+- Claude Code with Jira MCP server configured
+- Python 3.8+ with `openpyxl` and `matplotlib`
+- Works with any Jira project that uses sprints

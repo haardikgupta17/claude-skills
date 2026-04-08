@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """
-Sprint Task Tracker — stdin JSON interface for sprint-pilot.
+Sprint Task Tracker — stdin JSON interface.
 
 Usage:
     echo '<json>' | python3 update_sprint_tasks.py --start --sprint "SPRINT NAME"
     echo '<json>' | python3 update_sprint_tasks.py --end   --sprint "SPRINT NAME"
-    echo '<json>' | python3 update_sprint_tasks.py --summon --sprint "SPRINT NAME"
-    python3 update_sprint_tasks.py --dashboard
 
 JSON format (array of ticket objects):
   [
     {
-      "key": "PROJ-XXXXX",
+      "key": "PROJ-12345",
       "summary": "...",
       "priority": "P2-High",
       "status": "Dev Assigned",
@@ -117,7 +115,7 @@ def get_last_sprint_sheet_name_and_keys(wb):
     return last_name, keys
 
 
-# -- Velocity sheet helpers ----------------------------------------------------
+# ── Velocity sheet helpers ────────────────────────────────────────────────────
 
 def _ensure_velocity_sheet(wb):
     if VELOCITY_SHEET in wb.sheetnames:
@@ -240,7 +238,7 @@ def velocity_record_end(wb, sprint_name, scope_adds, resolved, blocked, remainin
           f"{scope_adds} scope adds, {blocked} blocked.")
 
 
-# -- Row height auto-fit -------------------------------------------------------
+# ── Row height auto-fit ───────────────────────────────────────────────────────
 
 def _auto_row_height(ws, row_idx, min_height=20, line_height=15):
     """Estimate row height based on longest wrapped text in the row."""
@@ -251,13 +249,14 @@ def _auto_row_height(ws, row_idx, min_height=20, line_height=15):
             continue
         text = str(val)
         col_width = COL_WIDTHS[col_idx - 1]
+        # Estimate characters per line (~1.2 chars per unit of column width)
         chars_per_line = max(int(col_width * 1.2), 1)
         lines = max(len(text) // chars_per_line + 1, text.count('\n') + 1)
         max_lines = max(max_lines, lines)
     ws.row_dimensions[row_idx].height = max(min_height, max_lines * line_height)
 
 
-# -- Sprint sheet: --start mode ------------------------------------------------
+# ── Sprint sheet: --start mode ────────────────────────────────────────────────
 
 def add_sprint_sheet_start(wb, sprint_name, tickets):
     sheet_name = sprint_name[:31]
@@ -278,7 +277,7 @@ def add_sprint_sheet_start(wb, sprint_name, tickets):
     ws = wb.create_sheet(title=sheet_name)
 
     # Header row
-    header_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+    header_fill = PatternFill(start_color="C00000", end_color="C00000", fill_type="solid")
     for col_idx, (header, width) in enumerate(zip(HEADERS, COL_WIDTHS), 1):
         c = ws.cell(row=1, column=col_idx, value=header)
         c.font = Font(bold=True, color="FFFFFF", size=11)
@@ -377,7 +376,7 @@ def add_sprint_sheet_start(wb, sprint_name, tickets):
     return carried_count
 
 
-# -- Sprint sheet: --end mode --------------------------------------------------
+# ── Sprint sheet: --end mode ──────────────────────────────────────────────────
 
 def update_sprint_sheet_end(wb, sprint_name, tickets):
     sheet_name = sprint_name[:31]
@@ -524,7 +523,7 @@ def update_sprint_sheet_end(wb, sprint_name, tickets):
     return resolved, blocked, carried, scope_count
 
 
-# -- Sprint sheet: --summon mode ------------------------------------------------
+# ── Sprint sheet: --summon mode ────────────────────────────────────────────────
 
 def summon_ticket(wb, sprint_name, tickets):
     """Append one or more tickets to an existing sprint sheet as scope additions."""
@@ -637,7 +636,7 @@ def summon_ticket(wb, sprint_name, tickets):
     return added
 
 
-# -- Dashboard generation ------------------------------------------------------
+# ── Dashboard generation ─────────────────────────────────────────────────────
 
 DASHBOARD_PNG = EXCEL_PATH.parent / "Sprint_Velocity_Dashboard.png"
 
@@ -666,6 +665,7 @@ def generate_dashboard(wb):
         name = vs.cell(row, V_COL["Sprint"]).value
         if not name:
             continue
+        # Abbreviate long sprint names for chart labels
         label = str(name)
         if len(label) > 20:
             label = label[:18] + ".."
@@ -772,10 +772,10 @@ def generate_dashboard(wb):
     print(f"Dashboard: chart saved to {png_path} and embedded in Excel.")
 
 
-# -- Entry point ---------------------------------------------------------------
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Sprint task tracker for sprint-pilot")
+    parser = argparse.ArgumentParser(description="Sprint task tracker")
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument("--start", action="store_true", help="Sprint start mode")
     mode_group.add_argument("--end", action="store_true", help="Sprint end mode")
@@ -785,6 +785,7 @@ def main():
     args = parser.parse_args()
 
     if args.dashboard:
+        # Dashboard-only mode — no stdin needed, just regenerate from Velocity sheet
         if not EXCEL_PATH.exists():
             print("ERROR: Excel file not found. Run --start first.", file=sys.stderr)
             sys.exit(1)
@@ -825,7 +826,7 @@ def main():
         add_sprint_sheet_start(wb, args.sprint, tickets)
     elif args.end:
         update_sprint_sheet_end(wb, args.sprint, tickets)
-        generate_dashboard(wb)
+        generate_dashboard(wb)  # Auto-regenerate dashboard on sprint close
     elif args.summon:
         summon_ticket(wb, args.sprint, tickets)
 
