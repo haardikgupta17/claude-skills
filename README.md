@@ -7,6 +7,7 @@ A collection of custom skills (slash commands) for [Claude Code](https://docs.an
 | Skill | Description |
 |-------|-------------|
 | [sprint-pilot](./sprint-pilot/) | AI-powered sprint co-pilot — Jira ticket analysis, velocity tracking, scope creep detection, and sprint reviews |
+| [deutsch-tutor](./deutsch-tutor/) | AI German teacher inside Claude Code — structured daily lessons from A1 to B1 with progress tracking |
 
 ## What are Claude Code skills?
 
